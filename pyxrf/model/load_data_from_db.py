@@ -787,16 +787,14 @@ def map_data2D_hxn(
     logger.info("Plan type: '%s'", start_doc["plan_type"])
 
     if "scan" in start_doc:
-        #print(" panda scan ")
+        # print(" panda scan ")
         plan_type = start_doc["scan"]["type"]
 
     else:
         plan_type = start_doc["plan_type"]
 
-
-
     # Exclude certain types of plans based on data from the start document
-    #later change to look for 1D scan based on motor length
+    # later change to look for 1D scan based on motor length
     if isinstance(skip_scan_types, (list, tuple)) and plan_type in skip_scan_types:
         raise RuntimeError(
             f"Failed to load the scan: plan type {start_doc['plan_type']!r} is in the list of skipped types"
@@ -944,7 +942,7 @@ def map_data2D_hxn(
 
     keylist = hdr.descriptors[0].data_keys.keys()
     det_list = [v for v in keylist if "xspress3" in v]  # find xspress3 det with key word matching
-    det_list = [v for v in det_list if len(v)==12] #added to filter out other rois added by user
+    det_list = [v for v in det_list if len(v) == 12]  # added to filter out other rois added by user
     scaler_list_all = config_data["scaler_list"]
 
     all_keys = hdr.descriptors[0].data_keys.keys()
@@ -952,7 +950,7 @@ def map_data2D_hxn(
 
     fields = det_list + scaler_list + pos_list
 
-    try: # load data with hdf5, faster
+    try:  # load data with hdf5, faster
         data_out = map_data2D_HDF5(
             hdr,
             datashape,
