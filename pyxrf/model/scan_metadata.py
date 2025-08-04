@@ -1,3 +1,4 @@
+import pprint
 import re
 import textwrap
 
@@ -63,6 +64,9 @@ class ScanMetadataBase:
 
     def items(self):
         return self._values.items()
+
+    def setdefault(self, key, default=None):
+        return self._values.setdefault(key, default)
 
     def update(self, source_dict):
         self._values.update(source_dict)
@@ -131,6 +135,9 @@ class ScanMetadataBase:
                         # Now remove spaces at the beginning of the line, since the key will be
                         #   printed instead of the spaces
                         val = val.lstrip()
+                    elif isinstance(v, dict):
+                        val = "\n" + pprint.pformat(v)
+                        val = val.replace("\n", "\n    ")
                     else:
                         val = v
 
@@ -221,6 +228,9 @@ class ScanMetadataXRF(ScanMetadataBase):
             "instrument_mono_incident_energy": "incident energy",
             "instrument_beam_current": "ring current, mA",
             "instrument_detectors": "detectors",
+            "instrument_sample_to_detector": "sample-to-detector distance, mm",
+            "instrument_attenuators_config": "attenuators configuration",
+            "instrument_preamps_config": "preamp configuration",
             "sample_name": "sample name",
             "experiment_plan_name": "plan name",
             "experiment_plan_type": "plan type",
