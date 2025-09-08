@@ -165,7 +165,6 @@ class FileIOModel(Atom):
         """
 
         # Determine the current version of PyXRF
-        global pyxrf_version
         pyxrf_version_str = pyxrf_version
         if pyxrf_version_str[0].lower() != "v":
             pyxrf_version_str = f"v{pyxrf_version_str}"
@@ -1511,7 +1510,12 @@ def read_hdf_APS(
                 # Convert ndarrays to lists (they were lists before they were saved)
                 if isinstance(value, np.ndarray):
                     value = list(value)
-                mdata[key] = value
+                if "|" in key:
+                    k1, k2 = key.split("|", 1)
+                    mdata.setdefault(k1, {})
+                    mdata[k1][k2] = value
+                else:
+                    mdata[key] = value
 
         data = f["xrfmap"]
         fname = file_name.split(".")[0]

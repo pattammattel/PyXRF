@@ -669,6 +669,27 @@ def _get_metadata_value_from_descriptor_document(hdr, *, data_key, stream_name="
     return value
 
 
+def _get_metadata_value_from_descriptor_document_by_pattern(hdr, *, pattern, stream_name="baseline"):
+    """
+    Returns all variables in the the first occurrence of each variable with the name containing
+    the patter in specified document stream. Returns empty dictionary if the variable is not found.
+    """
+    value_dict = {}
+    docs = hdr.documents(stream_name=stream_name)
+    for name, doc in docs:
+        if (name != "event") or ("descriptor" not in doc):
+            continue
+        try:
+            values = {k: v for k, v in doc["data"].items if re.search(pattern, k)}
+            for k, v in values.items():
+                if k not in value_dict:
+                    value_dict[k] = v
+        except Exception:
+            pass
+
+    return value_dict
+
+
 def _get_metadata_all_from_descriptor_document(hdr, *, data_key, stream_name="baseline"):
     """
     Returns the list of the recorded values of variables with the name ``data_key`` in
@@ -701,6 +722,21 @@ def _get_metadata_value_from_descriptor_document_tiled(hdr, *, data_key, stream_
         pass
 
     return value
+
+
+def _get_metadata_value_from_descriptor_document_by_pattern_tiled(hdr, *, pattern, stream_name="baseline"):
+    """
+    Returns all variables in the the first occurrence of each variable with the name containing
+    the patter in specified document stream. Returns empty dictionary if the variable is not found.
+    """
+    value_dict = {}
+    docs = hdr[stream_name]["data"]
+
+    for k, v in docs.items():
+        if re.search(pattern, k):
+            value_dict[k] = v.compute()[0]
+
+    return value_dict
 
 
 def _get_metadata_all_from_descriptor_document_tiled(hdr, *, data_key, stream_name="baseline"):
@@ -2279,6 +2315,24 @@ def map_data2D_srx_new_tiled(
     v = _get_metadata_value_from_descriptor_document_tiled(hdr, data_key="ring_current", stream_name="baseline")
     if v is not None:
         mdata["instrument_beam_current"] = v
+
+    v = _get_metadata_all_from_descriptor_document_tiled(
+        hdr, data_key="nano_det_sample2detector", stream_name="baseline"
+    )
+    if v is not None:
+        mdata["instrument_sample_to_detector"] = v
+
+    v = _get_metadata_value_from_descriptor_document_by_pattern_tiled(
+        hdr, pattern="attenuators", stream_name="baseline"
+    )
+    if v:
+        mdata["instrument_attenuators_config"] = v
+
+    v = _get_metadata_value_from_descriptor_document_by_pattern_tiled(
+        hdr, pattern="preamp", stream_name="baseline"
+    )
+    if v:
+        mdata["instrument_preamps_config"] = v
 
     for ax in ["X", "Y", "Z"]:
         v = _get_metadata_all_from_descriptor_document_tiled(
@@ -3981,6 +4035,27 @@ def save_data_to_hdf5(
         metadata_prepared.update(metadata_additional)
         if "file_software" not in metadata_prepared:
             metadata_prepared.update(metadata_software_version)
+
+        metadata_prepared2 = metadata_prepared
+        metadata_prepared = {}
+        for k, v in metadata_prepared2.items():
+            if isinstance(v, dict):
+                for k2, v2 in v.items():
+                    metadata_prepared[k + "|" + k2] = v2
+            else:
+                metadata_prepared[k] = v
+
+        metadata_prepared2 = metadata_prepared
+        metadata_prepared = {}
+        for k, v in metadata_prepared2.items():
+            if isinstance(v, np.int64):
+                metadata_prepared[k] = int(v)
+            elif isinstance(v, np.float64):
+                metadata_prepared[k] = float(v)
+            elif isinstance(v, np.str_):
+                metadata_prepared[k] = str(v)
+            else:
+                metadata_prepared[k] = v
 
         if metadata_prepared:
             # We assume, that metadata does not contain repeated keys. Otherwise the
