@@ -3828,6 +3828,8 @@ def map_data2D(
     -------
     dict of numpy array
     """
+
+    print("Assembling data from databroker into 2D format ...")
     data_output = {}
     new_v_shape = datashape[0]  # updated if scan is not completed
     sum_data = None
