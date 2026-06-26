@@ -3920,7 +3920,19 @@ def map_data2D(
         scaler_names = scaler_list
         scaler_data = np.zeros([datashape[0], datashape[1], len(scaler_list)])
         for i in range(len(scaler_list)):
-            scaler_data[:,:,i] = np.array(list(hdr.data(scaler_list[i]))).reshape((datashape[0], datashape[1]))
+            scaler_raw = np.array(list(hdr.data(scaler_list[i])))
+            print(f"DEBUG HXN: Scaler '{scaler_list[i]}' raw length: {len(scaler_raw)}, Expected: {datashape[0] * datashape[1]}")
+            
+            # Handle mismatch between scaler data length and expected size
+            expected_size = datashape[0] * datashape[1]
+            if len(scaler_raw) < expected_size:
+                print(f"DEBUG HXN: Padding scaler '{scaler_list[i]}' from {len(scaler_raw)} to {expected_size}")
+                scaler_raw = np.pad(scaler_raw, (0, expected_size - len(scaler_raw)), mode='edge')
+            elif len(scaler_raw) > expected_size:
+                print(f"DEBUG HXN: Truncating scaler '{scaler_list[i]}' from {len(scaler_raw)} to {expected_size}")
+                scaler_raw = scaler_raw[:expected_size]
+            
+            scaler_data[:,:,i] = scaler_raw.reshape((datashape[0], datashape[1]))
     else:
         # scaler data
         scaler_names, scaler_data = get_name_value_from_db(scaler_list, data, datashape)
@@ -3929,14 +3941,22 @@ def map_data2D(
         scaler_data = flip_data(scaler_data, subscan_dims=subscan_dims)
 
     # Make sure that scaler data as xs3 data
+    print(f"DEBUG: Scaler data original shape: {scaler_data.shape}, Target: nv={nv}, nh={nh}")
     if scaler_data.shape[0] > nv:
+        print(f"DEBUG: Truncating scaler data axis 0 from {scaler_data.shape[0]} to {nv}")
         scaler_data = scaler_data[:nv, :, :]
     elif scaler_data.shape[0] < nv:
-        scaler_data = np.pad(scaler_data, [(0, nv - scaler_data.shape[0]), (0, 0), (0, 0)])
+        diff = nv - scaler_data.shape[0]
+        print(f"DEBUG: Padding scaler data axis 0 from {scaler_data.shape[0]} to {nv} (adding {diff} rows)")
+        scaler_data = np.pad(scaler_data, [(0, diff), (0, 0), (0, 0)], mode='edge')
     if scaler_data.shape[1] > nh:
+        print(f"DEBUG: Truncating scaler data axis 1 from {scaler_data.shape[1]} to {nh}")
         scaler_data = scaler_data[:, :nh, :]
     elif scaler_data.shape[1] < nh:
-        scaler_data = np.pad(scaler_data, [(0, 0), (0, nh - scaler_data.shape[1]), (0, 0)])
+        diff = nh - scaler_data.shape[1]
+        print(f"DEBUG: Padding scaler data axis 1 from {scaler_data.shape[1]} to {nh} (adding {diff} columns)")
+        scaler_data = np.pad(scaler_data, [(0, 0), (0, diff), (0, 0)], mode='edge')
+    print(f"DEBUG: Scaler data final shape: {scaler_data.shape}")
 
     data_output["scaler_names"] = scaler_names
     data_output["scaler_data"] = scaler_data
