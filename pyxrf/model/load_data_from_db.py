@@ -3923,19 +3923,20 @@ def map_data2D(
         scaler_names = scaler_list
         scaler_data = np.zeros([datashape[0], datashape[1], len(scaler_list)])
         for i in range(len(scaler_list)):
-            scaler_raw = np.array(list(hdr.data(scaler_list[i])))
-            print(f"DEBUG HXN: Scaler '{scaler_list[i]}' raw length: {len(scaler_raw)}, Expected: {datashape[0] * datashape[1]}")
-            
-            # Handle mismatch between scaler data length and expected size
-            expected_size = datashape[0] * datashape[1]
-            if len(scaler_raw) < expected_size:
-                print(f"DEBUG HXN: Padding scaler '{scaler_list[i]}' from {len(scaler_raw)} to {expected_size}")
-                scaler_raw = np.pad(scaler_raw, (0, expected_size - len(scaler_raw)), mode='edge')
-            elif len(scaler_raw) > expected_size:
-                print(f"DEBUG HXN: Truncating scaler '{scaler_list[i]}' from {len(scaler_raw)} to {expected_size}")
-                scaler_raw = scaler_raw[:expected_size]
-            
-            scaler_data[:,:,i] = scaler_raw.reshape((datashape[0], datashape[1]))
+
+            scaler_data_ = np.array(list(hdr.data(scaler_list[i])))
+            scaler_data_ = scaler_data_.flatten()  # Flatten to 1D in case of multidimensional data
+
+            difference = (datashape[0] * datashape[1]) - len(scaler_data_)
+            print(f"Scaler {scaler_list[i]} has {len(scaler_data_)} points, expected {datashape[0] * datashape[1]} points. Difference: {difference}")
+
+            if difference > 0:
+                scaler_data_ = np.pad(scaler_data_, (0, difference), mode='edge')
+            elif difference < 0:
+                # Optional: Handle the inverse case just in case I0 is somehow longer than xrf
+                scaler_data_ = scaler_data_[:datashape[0] * datashape[1]]
+
+            scaler_data[:,:,i] = scaler_data_.reshape((datashape[0], datashape[1]))
     else:
         print(f"DEBUG HXN: scalar data taking using get_name_value_from_db for scaler_list: {scaler_list}")
         scaler_names, scaler_data = get_name_value_from_db(scaler_list, data, datashape)
