@@ -3934,7 +3934,7 @@ def map_data2D(
             
             scaler_data[:,:,i] = scaler_raw.reshape((datashape[0], datashape[1]))
     else:
-        # scaler data
+        print(f"DEBUG HXN: scalar data taking using get_name_value_from_db for scaler_list: {scaler_list}")
         scaler_names, scaler_data = get_name_value_from_db(scaler_list, data, datashape)
 
     if fly_type in ("pyramid",):
