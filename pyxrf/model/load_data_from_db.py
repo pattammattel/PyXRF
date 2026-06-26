@@ -3917,6 +3917,7 @@ def map_data2D(
     data_output["pos_data"] = new_p
 
     if db.name == 'hxn':
+        print(f"DEBUG HXN: db.hxn selected, using hdr.data for scaler_list: {scaler_list}")
         scaler_names = scaler_list
         scaler_data = np.zeros([datashape[0], datashape[1], len(scaler_list)])
         for i in range(len(scaler_list)):
